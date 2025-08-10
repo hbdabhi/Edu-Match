@@ -194,8 +194,8 @@ class _verifyOtpScreenState extends State<verifyOtpScreen> {
               ),
             ),
             onPressed: () async {
+              isLoading = true;
               setState(() {
-                isLoading = true;
               });
               try {
                 PhoneAuthCredential credential =
@@ -210,8 +210,8 @@ class _verifyOtpScreenState extends State<verifyOtpScreen> {
                   SnackBar(content: Text(ex.toString()))
                 );
               }finally {
+                isLoading = false;
                 setState(() {
-                  isLoading = false;
                 });
               }
 

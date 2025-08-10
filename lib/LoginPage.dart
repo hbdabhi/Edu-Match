@@ -14,6 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController userName = TextEditingController();
   TextEditingController password = TextEditingController();
   bool _ispass = true;
+  bool _isLoding = false;
   final formkey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -65,9 +66,6 @@ class _LoginPageState extends State<LoginPage> {
                           if (value == null || value.isEmpty) {
                             return "Number is Required";
                           }
-                          if (value.length != 13) {
-                            return "phone number is 10 numbers";
-                          }
                           return null;
                         },
                         controller: userName,
@@ -110,14 +108,21 @@ class _LoginPageState extends State<LoginPage> {
                           TextButton(onPressed: (){}, child: Text('Forget Password?',style: TextStyle(color: Colors.blue[900]),))
                         ],
                       ),
+                      _isLoding? CircularProgressIndicator():
                       ElevatedButton(onPressed: () async {
                         try {
                           if (formkey.currentState!.validate()) {
+                            _isLoding = true;
+                            setState(() {
+                            });
                             var existinguser = await FirebaseFirestore.instance
                                 .collection('users')
-                                .where('phone', isEqualTo: userName.text)
+                                .where('phone', isEqualTo: "+91${userName.text}")
                                 .where('password', isEqualTo: password.text)
                                 .get();
+                            _isLoding = false;
+                            setState(() {
+                            });
 
                             if (existinguser.docs.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -141,17 +146,17 @@ class _LoginPageState extends State<LoginPage> {
                         }
                       }, child: Text('Login'),
                         style: ElevatedButton.styleFrom(
-                          
+
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(13),
                             )
-        
+
                         ),),
                       Spacer(flex: 3,),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('     for new user'),
+                          Text('for new user'),
                           TextButton(onPressed: (){Navigator.push(context, MaterialPageRoute(builder: (context) {
                             return
                               SignUpPage();

@@ -12,9 +12,10 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   TextEditingController Name = TextEditingController();
-  TextEditingController phone = TextEditingController(text: "+91");
+  TextEditingController phone = TextEditingController();
   TextEditingController password = TextEditingController();
   bool _ispass = true;
+  bool _isLoding =false ;
   final formkey = GlobalKey<FormState>();
 
   @override
@@ -96,9 +97,6 @@ class _SignUpPageState extends State<SignUpPage> {
                           if (value == null || value.isEmpty) {
                             return "Number is Required";
                           }
-                          if (value.length != 13) {
-                            return "phone number is 10 numbers";
-                          }
                           return null;
                         },
                         controller: phone,
@@ -137,33 +135,63 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ),
                       Spacer(flex: 3,),
+                      _isLoding ? CircularProgressIndicator():
                       ElevatedButton(onPressed: () async {
-                        if(formkey.currentState!.validate()){
-                          var existinguser = await FirebaseFirestore.instance.collection('users').where('phone',isEqualTo: phone.text).get();
-                          if(existinguser.docs.isNotEmpty){
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Phone Number is already Registered')));
-                            return;
+                        try {
+                          if (formkey.currentState!.validate()) {
+                            _isLoding = true;
+                            setState(() {});
+                            var existinguser = await FirebaseFirestore.instance
+                                .collection('users').where(
+                                'phone', isEqualTo: phone.text).get();
+                            if (existinguser.docs.isNotEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(
+                                      'Phone Number is already Registered')));
+                              _isLoding = false;
+                              setState(() {});
+                              return;
+                            }
+                            _isLoding = true;
+                            setState(() {});
+                            if(_isLoding==true){
+                            await FirebaseAuth.instance.verifyPhoneNumber(
+                                verificationCompleted: (
+                                    PhoneAuthCredential credential) {},
+                                verificationFailed: (FirebaseException ex) {},
+                                codeSent: (String verificationid,
+                                    int ? resendtoken) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          verifyOtpScreen(
+                                            phone: "+91${phone.text}",
+                                            verificationid: verificationid,
+                                            name: Name.text,
+                                            password: password.text,
+                                          ),
+                                    ),
+                                  );
+                                  _isLoding = false;
+                                  setState(() {
+                                  });
+                                },
+                                codeAutoRetrievalTimeout: (
+                                    String varificationid) {
+                                  _isLoding=false;
+                                  setState(() {
+                                  });
+                                },
+                                phoneNumber: "+91${phone.text}");
                           }
-                          await FirebaseAuth.instance.verifyPhoneNumber(
-                              verificationCompleted: (
-                                  PhoneAuthCredential credential) {},
-                              verificationFailed: (FirebaseException ex) {},
-                              codeSent: (String verificationid,
-                                  int ? resendtoken) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        verifyOtpScreen(phone: phone.text.toString(),verificationid: verificationid,name: Name.text,password: password.text,
-                                        ),
-                                  ),
-                                );
-                              },
-                              codeAutoRetrievalTimeout: (
-                                  String varificationid) {},
-                              phoneNumber: phone.text.toString());
+                          }
                         }
-
+                        catch(e){
+                          _isLoding = false;
+                          setState(() {
+                          });
+                        }
 
                       }, child: Text('SignUp'),
                         style: ElevatedButton.styleFrom(
